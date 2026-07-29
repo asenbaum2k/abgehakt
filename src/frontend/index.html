@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>abgehakt</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <header>
+        <h1><span class="logo">✅</span> abgehakt</h1>
+        <button id="themeToggle" class="icon-btn" title="Dark/Light Mode">🌙</button>
+    </header>
+
+    <!-- Add new todo -->
+    <form id="addForm" class="add-form">
+        <input
+            type="text"
+            id="titleInput"
+            placeholder="Was muss erledigt werden?"
+            autocomplete="off"
+            required
+        >
+        <div class="add-extras" id="addExtras" style="display:none">
+            <input type="text" id="notesInput" placeholder="Notiz (optional)">
+            <div class="date-row">
+                <input type="date" id="dateInput">
+                <input type="time" id="timeInput" placeholder="Uhrzeit">
+            </div>
+        </div>
+        <div class="add-actions">
+            <button type="button" id="expandBtn" class="expand-btn" title="Datum / Notiz hinzufügen">📅</button>
+            <button type="submit" id="addBtn" class="add-btn">+ Hinzufügen</button>
+        </div>
+    </form>
+
+    <!-- Filter tabs -->
+    <nav class="tabs">
+        <button class="tab active" data-filter="all">Alle</button>
+        <button class="tab" data-filter="today">Heute</button>
+        <button class="tab" data-filter="week">Woche</button>
+    </nav>
+
+    <!-- Todo list -->
+    <div id="todoList" class="todo-list" role="list">
+        <!-- Items rendered by JS -->
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-icon">🎯</div>
+        <p>Noch nichts zu tun!</p>
+        <p class="empty-sub">Füg oben einen Task hinzu.</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
