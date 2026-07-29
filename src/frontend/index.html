@@ -15,7 +15,10 @@
 <body>
     <header>
         <h1><span class="logo">✅</span> abgehakt</h1>
-        <button id="themeToggle" class="icon-btn" title="Dark/Light Mode">🌙</button>
+        <div class="header-actions">
+            <button id="notifyBtn" class="icon-btn" title="Benachrichtigungen aktivieren">🔔</button>
+            <button id="themeToggle" class="icon-btn" title="Dark/Light Mode">🌙</button>
+        </div>
     </header>
 
     <!-- Add new todo -->
@@ -33,6 +36,19 @@
                 <input type="date" id="dateInput">
                 <input type="time" id="timeInput" placeholder="Uhrzeit">
             </div>
+            <div class="date-row">
+                <select id="recurringSelect">
+                    <option value="">Einmalig</option>
+                    <option value="daily">🔁 Täglich</option>
+                    <option value="weekly">🔁 Wöchentlich</option>
+                    <option value="monthly">🔁 Monatlich</option>
+                    <option value="yearly">🔁 Jährlich</option>
+                </select>
+                <label class="notify-label">
+                    <input type="checkbox" id="notifyCheck"> 🔔 Erinnern
+                </label>
+            </div>
+            <input type="text" id="tagsInput" placeholder="Tags (durch Komma getrennt)">
         </div>
         <div class="add-actions">
             <button type="button" id="expandBtn" class="expand-btn" title="Datum / Notiz hinzufügen">📅</button>
@@ -46,6 +62,9 @@
         <button class="tab" data-filter="today">Heute</button>
         <button class="tab" data-filter="week">Woche</button>
     </nav>
+
+    <!-- Tag filter chips -->
+    <div id="tagFilterChips" class="tag-filter-chips" role="list"></div>
 
     <!-- Todo list -->
     <div id="todoList" class="todo-list" role="list">
