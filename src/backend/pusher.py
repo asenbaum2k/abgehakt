@@ -24,6 +24,7 @@ import sqlite3
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from email.header import Header
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -148,6 +149,23 @@ def mark_notified(conn, todo_id: str):
 # ── Push ────────────────────────────────────────────────────
 
 
+def encode_title(title: str) -> str:
+    """RFC-2047-encode a title for the ntfy Title header.
+
+    HTTP headers are ASCII-only in httpx; ntfy decodes RFC 2047
+    (=?utf-8?b?...?=) on the server side, so emojis/umlauts survive.
+    Pure-ASCII titles pass through unchanged.
+    """
+    title = title[:200]
+    try:
+        title.encode("ascii")
+        return title
+    except UnicodeEncodeError:
+        # NB: Header() must get BYTES, and .encode() (not str()) produces
+        # the wire format — str() returns the decoded form unchanged.
+        return Header(title.encode("utf-8"), "utf-8").encode()
+
+
 def send_push(todo: dict) -> bool:
     """Send one push via ntfy. Returns True on HTTP 2xx."""
     notify_dt = compute_notify_dt(todo)
@@ -158,8 +176,7 @@ def send_push(todo: dict) -> bool:
         body += f"\n{todo['notes'].strip()[:200]}"
 
     headers = {
-        # Title header must stay latin-1-safe; emojis go via tags.
-        "Title": todo["title"][:200],
+        "Title": encode_title(todo["title"]),
         "Priority": "4",
         "Tags": "alarm_clock,abgehakt",
         "Click": NTFY_CLICK_URL,

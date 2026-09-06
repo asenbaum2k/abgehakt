@@ -110,6 +110,30 @@ def test_within_grace_still_sends():
     assert pusher.due_for_notification(todo, now, timedelta(minutes=180)) == "send"
 
 
+# ── encode_title (RFC 2047 for header safety) ──────────────
+
+
+def test_ascii_title_passes_through():
+    assert pusher.encode_title("Milch kaufen") == "Milch kaufen"
+
+
+def test_umlaut_title_gets_encoded_and_is_ascii():
+    encoded = pusher.encode_title("Äpfel für Müller")
+    encoded.encode("ascii")  # must not raise
+    assert encoded.startswith("=?utf-8?")
+
+
+def test_emoji_title_gets_encoded_and_is_ascii():
+    encoded = pusher.encode_title("Test 🔔 Push")
+    encoded.encode("ascii")  # must not raise
+    assert "=?utf-8?" in encoded
+
+
+def test_title_truncated_to_200_chars():
+    encoded = pusher.encode_title("x" * 300)
+    assert len(encoded) == 200
+
+
 # ── is_notifiable ───────────────────────────────────────────
 
 
