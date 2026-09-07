@@ -36,6 +36,9 @@ def _migrate_v2(conn):
     if "notify_at" not in cols:
         conn.execute("ALTER TABLE todos ADD COLUMN notify_at TEXT DEFAULT ''")
         print("[DB] Migration: added notify_at column")
+    if "notified_at" not in cols:
+        conn.execute("ALTER TABLE todos ADD COLUMN notified_at TEXT DEFAULT ''")
+        print("[DB] Migration: added notified_at column")
 
     # Tags master table (for listing all unique tags)
     conn.execute("""
@@ -199,6 +202,11 @@ def update_todo(todo_id, updates):
 
     now = time.strftime("%Y-%m-%d %H:%M:%S")
     filtered["updated_at"] = now
+
+    # Reset notification state when schedule-relevant fields change,
+    # so the pusher re-evaluates the todo.
+    if {"due_date", "due_time", "notify_at", "completed"} & set(filtered):
+        filtered["notified_at"] = ""
 
     set_clause = ", ".join(f"{k} = ?" for k in filtered)
     values = list(filtered.values()) + [todo_id]

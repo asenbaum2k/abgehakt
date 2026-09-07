@@ -1,0 +1,15 @@
+[Unit]
+Description=abgehakt pusher – ntfy push notifications for due todos
+After=network-online.target tailscaled.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ben/.openclaw/workspace/projects/abgehakt-v2/src/backend
+ExecStart=/usr/bin/python3 pusher.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
