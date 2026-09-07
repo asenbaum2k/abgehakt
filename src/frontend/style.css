@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════
-   abgehakt — Mobile-first CSS with Dark Mode
+   abgehakt v2 — Mobile-first CSS with Dark Mode
+   V2: tags, recurring badges, swipe, undo, notifications
    ═══════════════════════════════════════════════ */
 
 :root {
@@ -18,7 +19,7 @@
     --checked: #34c759;
     --shadow: 0 1px 3px rgba(0,0,0,0.08);
     --shadow-lg: 0 4px 12px rgba(0,0,0,0.10);
-    
+
     /* Ampel colors */
     --overdue: #ff3b30;
     --overdue-bg: #ffe5e5;
@@ -26,6 +27,19 @@
     --today-bg: #fff3e0;
     --future: #34c759;
     --future-bg: #e8f5e9;
+
+    /* Tags */
+    --tag-bg: #e8f0fe;
+    --tag-color: #1a73e8;
+    --tag-active-bg: #1a73e8;
+    --tag-active-color: #fff;
+
+    /* Swipe */
+    --swipe-delete: #ff3b30;
+
+    /* Toast / Undo */
+    --toast-bg: #323232;
+    --toast-color: #fff;
 }
 
 [data-theme="dark"] {
@@ -43,13 +57,21 @@
     --checked: #22c55e;
     --shadow: 0 1px 3px rgba(0,0,0,0.3);
     --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
-    
+
     --overdue: #ef4444;
     --overdue-bg: #3b1111;
     --today: #f59e0b;
     --today-bg: #3b2e0a;
     --future: #22c55e;
     --future-bg: #0a3b1a;
+
+    --tag-bg: #1e3a5f;
+    --tag-color: #7cb7ff;
+    --tag-active-bg: #3b82f6;
+    --tag-active-color: #fff;
+
+    --toast-bg: #374151;
+    --toast-color: #e4e4e7;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,6 +85,7 @@ body {
     max-width: 500px;
     margin: 0 auto;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
 }
 
 /* ══ Header ══ */
@@ -74,6 +97,11 @@ header {
 }
 h1 { font-size: 1.5rem; font-weight: 700; }
 .logo { font-size: 1.3rem; margin-right: 4px; }
+
+.header-actions {
+    display: flex;
+    gap: 6px;
+}
 
 .icon-btn {
     background: var(--bg-card);
@@ -113,9 +141,10 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     display: flex; flex-direction: column; gap: 6px;
 }
 .date-row {
-    display: flex; gap: 8px;
+    display: flex; gap: 8px; align-items: center;
 }
-.date-row input {
+.date-row input,
+.date-row select {
     flex: 1;
     padding: 10px;
     border: 1px solid var(--border);
@@ -124,8 +153,24 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     background: var(--bg-input);
     color: var(--text);
     outline: none;
+    font-family: inherit;
 }
-.date-row input:focus { border-color: var(--accent); }
+.date-row input:focus,
+.date-row select:focus { border-color: var(--accent); }
+
+.notify-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    padding: 10px 0;
+}
+.notify-label input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+}
 
 .add-actions {
     display: flex; gap: 8px;
@@ -158,7 +203,7 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 /* ══ Filter Tabs ══ */
 .tabs {
     display: flex; gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 .tab {
     flex: 1;
@@ -178,6 +223,32 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     border-color: var(--accent);
 }
 
+/* ══ Tag Filter Chips ══ */
+.tag-filter-chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 10px;
+    min-height: 0;
+}
+.tag-chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--tag-bg);
+    color: var(--tag-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+.tag-chip:hover {
+    opacity: 0.85;
+}
+.tag-chip.active {
+    background: var(--tag-active-bg);
+    color: var(--tag-active-color);
+}
+
 /* ══ Todo Items ══ */
 .todo-list { display: flex; flex-direction: column; gap: 6px; }
 
@@ -190,9 +261,10 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     padding: 10px 12px;
     box-shadow: var(--shadow);
     border-left: 4px solid transparent;
-    transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
-    touch-action: none;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    touch-action: pan-y;
     user-select: none;
+    position: relative;
 }
 .todo-item:active { transform: scale(0.98); }
 .todo-item.dragging {
@@ -248,6 +320,11 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     font-size: 0.95rem;
     font-weight: 500;
     word-break: break-word;
+    display: flex; align-items: center; gap: 4px;
+}
+.todo-meta-row {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin-top: 2px;
 }
 .todo-meta {
     display: flex; gap: 6px; align-items: center;
@@ -255,8 +332,41 @@ h1 { font-size: 1.5rem; font-weight: 700; }
     font-size: 0.78rem;
     color: var(--text-secondary);
 }
+.notes-text {
+    color: var(--text-muted);
+    font-style: italic;
+}
 .todo-duedate { display: flex; align-items: center; gap: 3px; }
 .todo-duedate.urgent { color: var(--overdue); font-weight: 600; }
+
+/* Recurring badge */
+.recurring-badge {
+    display: inline-flex; align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--tag-bg);
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+/* Tags on todo items */
+.todo-tags-row {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-top: 4px;
+}
+.todo-tag {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: var(--tag-bg);
+    color: var(--tag-color);
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.todo-tag:hover { opacity: 0.8; }
 
 .strikethrough {
     text-decoration: line-through;
@@ -277,6 +387,63 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 }
 .delete-btn:hover { color: var(--danger); }
 
+/* ══ Undo Bar ══ */
+.undo-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--toast-bg);
+    color: var(--toast-color);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    animation: slideUp 0.25s ease-out;
+    box-shadow: var(--shadow-lg);
+}
+.undo-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+}
+.undo-btn:hover { background: var(--accent-hover); }
+.undo-dismiss {
+    background: none;
+    border: none;
+    color: var(--toast-color);
+    opacity: 0.7;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* ══ Toast ══ */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--toast-bg);
+    color: var(--toast-color);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+}
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
 /* ══ Empty state ══ */
 .empty-state {
     text-align: center;
@@ -286,10 +453,15 @@ h1 { font-size: 1.5rem; font-weight: 700; }
 .empty-icon { font-size: 3rem; margin-bottom: 12px; }
 .empty-sub { font-size: 0.85rem; margin-top: 4px; color: var(--text-muted); }
 
-/* ══ Drag feedback ══ */
-.drag-placeholder {
-    border: 2px dashed var(--accent);
-    border-radius: 12px;
-    height: 52px;
-    opacity: 0.4;
+/* ══ Animations ══ */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══ Mobile Responsive ══ */
+@media (max-width: 380px) {
+    body { padding: 8px; }
+    .todo-item { padding: 8px 10px; }
+    .todo-title { font-size: 0.9rem; }
 }
