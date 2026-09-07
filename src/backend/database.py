@@ -317,8 +317,9 @@ def _advance_date(due_date: str, interval: str) -> str:
 
 
 def complete_recurring(todo_id):
-    """Complete a recurring todo and create the next instance,
-    or complete a one-shot todo normally. Returns (result_todo, next_todo_or_None).
+    """Toggle completion. For recurring todos, transitioning from
+    incomplete to complete also creates the next instance.
+    Returns (result_todo, next_todo_or_None).
     """
     todo = get_todo(todo_id)
     if not todo:
@@ -326,17 +327,13 @@ def complete_recurring(todo_id):
 
     recurring = (todo.get("recurring") or "").strip()
     due_date = (todo.get("due_date") or "").strip()
+    was_completed = bool(todo["completed"])
 
-    # If not recurring, just toggle done
-    if not recurring:
-        result = update_todo(todo_id, {"completed": not bool(todo["completed"])})
-        return result, None
+    result = update_todo(todo_id, {"completed": not was_completed})
 
-    # Mark current as completed
-    result = update_todo(todo_id, {"completed": True})
-
-    # Create next instance only if currently un-completed and has a due date
-    if not bool(todo["completed"]):
+    # Only create the next instance when actually completing a recurring
+    # todo (not when un-completing it back via a second toggle).
+    if recurring and not was_completed:
         next_date = _advance_date(due_date, recurring)
         if next_date:
             import uuid

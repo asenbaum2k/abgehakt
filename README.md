@@ -15,11 +15,9 @@ python main.py
 
 ## ✨ V2 Features (neu)
 
-### 🔔 Browser-Notifications bei Fälligkeit
-- Permission-Flow: Klick auf 🔔 im Header → Browser-Frage
-- Clientseitiger Scheduler prüft jede Minute auf fällige Todos
-- Notification erscheint bei exakter Uhrzeit (wenn `due_time` gesetzt & "Erinnern" aktiviert)
-- Service Worker fängt Notification-Clicks ab und fokussiert die App
+### 🔔 Notifications bei Fälligkeit
+- **Browser-Notification** (client-seitig): Klick auf 🔔 im Header → Permission-Flow, ein Scheduler prüft jede Minute auf fällige Todos und zeigt eine Notification, solange die PWA offen ist. Service Worker fängt Notification-Clicks ab und fokussiert die App.
+- **Push-Benachrichtigung** (server-seitig, auch bei geschlossener App): eigenständiger Daemon `src/backend/pusher.py` pollt die DB alle 30s und sendet fällige Erinnerungen über einen selbstgehosteten [ntfy](https://ntfy.sh/)-Server. Offsets: `due`, `5min_before`, `15min_before`, `1h_before`, `1day_before` (Feld `notify_at`). Läuft unabhängig von FastAPI als eigener systemd-Service (`deploy/abgehakt-pusher.service`), siehe unten.
 
 ### 🔁 Wiederkehrende Todos
 - Intervalle: **Täglich**, **Wöchentlich**, **Monatlich**, **Jährlich**
@@ -79,7 +77,24 @@ cd src/backend
 pytest tests/ -v
 ```
 
-Tests decken ab: CRUD, Tags (create/list/filter), Recurring (daily/weekly/monthly advance), Undo, Notify, Filter modes.
+Tests decken ab: CRUD, Tags (create/list/filter), Recurring (daily/weekly/monthly advance), Undo, Notify, Filter modes, Pusher (Notify-Zeitpunkt, Grace-Window, ntfy-Encoding).
+
+## 📤 Push-Daemon Deployment (pusher.py)
+
+```bash
+cd src/backend
+cp .env.example .env   # NTFY_USER/NTFY_PASSWORD eintragen
+python3 pusher.py
+```
+
+Für Dauerbetrieb als systemd-Service (siehe `deploy/abgehakt-pusher.service`):
+
+```bash
+sudo cp deploy/abgehakt-pusher.service /etc/systemd/system/
+sudo systemctl enable --now abgehakt-pusher
+```
+
+Konfiguration ausschließlich über `.env` (gitignored) oder Umgebungsvariablen — siehe Kopfkommentar in `pusher.py` für alle Optionen.
 
 ## 🏗️ Architektur
 
@@ -89,17 +104,21 @@ src/
 │   ├── main.py          # FastAPI app + routes
 │   ├── database.py      # SQLite mit Migrationen
 │   ├── models.py        # Pydantic models
+│   ├── pusher.py         # Standalone ntfy Push-Daemon (nicht in FastAPI)
 │   ├── requirements.txt
 │   └── tests/
-│       └── test_api.py  # 20+ tests
-└── frontend/
-    ├── index.html       # Mobile-first UI
-    ├── app.js           # V2 features
-    ├── style.css        # Ampel + Dark Mode + Swipe
-    ├── sw.js            # Service Worker
-    ├── manifest.json    # PWA manifest
-    ├── icon-192.png
-    └── icon-512.png
+│       ├── test_api.py     # CRUD, Tags, Recurring, Undo, Filter
+│       └── test_pusher.py  # Notify-Timing, Grace-Window, ntfy-Encoding
+├── frontend/
+│   ├── index.html       # Mobile-first UI
+│   ├── app.js           # V2 features
+│   ├── style.css        # Ampel + Dark Mode + Swipe
+│   ├── sw.js            # Service Worker
+│   ├── manifest.json    # PWA manifest
+│   ├── icon-192.png
+│   └── icon-512.png
+└── deploy/
+    └── abgehakt-pusher.service  # systemd unit für pusher.py
 ```
 
 ## 🔒 Sicherheit
@@ -113,5 +132,6 @@ src/
 - **Tags als CSV im Hauptfeld** statt eigener Many-to-Many-Tabelle — einfacher, performant für <100 Tags
 - **Soft-Delete** mit `deleted_todos` Tabelle statt echtem Löschen — ermöglicht Undo ohne Komplexität
 - **Recurring: beim Toggle nächste Instanz erstellen** (nicht beim Öffnen/Cron) — vermeidet Race Conditions, nutzergesteuert
-- **Client-Scheduler für Notifications** — kein Server-Cron nötig, solange PWA offen
-- **Kein Push-Subscription/Web-Push** — hätte Server + VAPID-Keys benötigt, überdimensioniert für privaten Einzelnutzer
+- **Client-Scheduler für Notifications, solange PWA offen ist** — kein Server-Cron nötig für den Fall
+- **Kein Web-Push/VAPID** — stattdessen ein self-hosted ntfy-Server + eigenständiger Poll-Daemon (`pusher.py`), damit Erinnerungen auch bei geschlossener App ankommen, ohne Push-Subscription-Infrastruktur im Browser
+- **Recurring-Toggle spiegelt den Ursprungszustand** — Umschalten von wiederkehrenden Todos toggelt `completed` genau wie bei normalen Todos; die nächste Instanz entsteht nur beim Übergang offen→erledigt, nicht beim Zurücksetzen

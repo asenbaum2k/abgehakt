@@ -190,6 +190,30 @@ def test_toggle_recurring_creates_next(client):
     assert data["next"]["completed"] is False
 
 
+def test_untoggle_recurring_does_not_duplicate(client):
+    """Toggling a recurring todo back to incomplete should not create
+    another next instance, and should leave it incomplete again."""
+    resp = client.post("/api/todos", json={
+        "title": "Weekly Standup",
+        "due_date": "2026-07-27",
+        "recurring": "weekly",
+    })
+    tid = resp.json()["id"]
+
+    # Complete it: creates the next instance.
+    resp = client.patch(f"/api/todos/{tid}/toggle")
+    assert resp.json()["todo"]["completed"] is True
+    assert resp.json()["next"] is not None
+
+    # Toggle again: should flip back to incomplete, no second next instance.
+    resp = client.patch(f"/api/todos/{tid}/toggle")
+    data = resp.json()
+    assert data["todo"]["completed"] is False
+    assert data["next"] is None
+
+    assert len(client.get("/api/todos").json()) == 2  # original + next only
+
+
 def test_toggle_one_shot_no_next(client):
     """Non-recurring toggle should not create a next instance."""
     resp = client.post("/api/todos", json={"title": "One Shot"})
