@@ -10,6 +10,8 @@ let currentTagFilter = '';
 let dragSrcId = null;
 let allTags = [];
 
+const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
+
 // ── Init ────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,7 +49,7 @@ function setupTheme() {
 
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    document.getElementById('themeToggle').textContent = theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    document.getElementById('themeToggle').innerHTML = icon(theme === 'dark' ? 'sun' : 'moon');
 }
 
 // ── Notifications ───────────────────────────────────────────
@@ -63,6 +65,7 @@ function setupNotifications() {
 
     if (!('Notification' in window)) {
         notifyBtn.disabled = true;
+        notifyBtn.innerHTML = icon('bell-off');
         notifyBtn.title = 'Benachrichtigungen werden nicht unterstützt';
     } else {
         updateNotificationButton();
@@ -134,7 +137,7 @@ function updateNotificationButton() {
     if (!notifyBtn || !('Notification' in window)) return;
     const permission = Notification.permission;
     notifyBtn.classList.toggle('active', permission === 'granted');
-    notifyBtn.textContent = permission === 'granted' ? '\uD83D\uDD14' : '\uD83D\uDD15';
+    notifyBtn.innerHTML = icon(permission === 'granted' ? 'bell' : 'bell-off');
     notifyBtn.title = permission === 'granted'
         ? 'Benachrichtigungen sind aktiviert'
         : permission === 'denied'
@@ -145,19 +148,19 @@ function updateNotificationButton() {
 async function requestNotificationPermission() {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'denied') {
-        showToast('\uD83D\uDD15 Bitte Benachrichtigungen in den Browser-Einstellungen erlauben.');
+        showToast('Bitte Benachrichtigungen in den Browser-Einstellungen erlauben.');
         return;
     }
     if (Notification.permission === 'default') {
         const permission = await Notification.requestPermission();
         updateNotificationButton();
         if (permission === 'granted') {
-            showToast('\uD83D\uDD14 Benachrichtigungen aktiviert!');
+            showToast('Benachrichtigungen aktiviert');
             checkDueNotifications();
         }
         return;
     }
-    showToast('\uD83D\uDD14 Benachrichtigungen sind bereits aktiviert.');
+    showToast('Benachrichtigungen sind bereits aktiviert');
 }
 
 // ── Tag Filter ──────────────────────────────────────────────
@@ -220,7 +223,8 @@ function setupAddForm() {
     expandBtn.addEventListener('click', () => {
         const visible = extras.style.display !== 'none';
         extras.style.display = visible ? 'none' : 'flex';
-        expandBtn.textContent = visible ? '\uD83D\uDCC5' : '\u2715';
+        expandBtn.classList.toggle('on', !visible);
+        expandBtn.innerHTML = icon(visible ? 'cal' : 'x');
     });
 
     form.addEventListener('submit', async (e) => {
@@ -252,7 +256,8 @@ function setupAddForm() {
             // Reset form
             form.reset();
             extras.style.display = 'none';
-            expandBtn.textContent = '\uD83D\uDCC5';
+            expandBtn.classList.remove('on');
+            expandBtn.innerHTML = icon('cal');
             document.getElementById('titleInput').focus();
             document.getElementById('recurringSelect').value = '';
 
@@ -364,8 +369,10 @@ function createTodoHTML(t) {
     const checkClass = t.completed ? 'checked' : '';
 
     // Recurring badge
-    const recurringLabels = { daily: '\uD83D\uDD04 t\u00e4glich', weekly: '\uD83D\uDD04 w\u00f6chentlich', monthly: '\uD83D\uDD04 monatlich', yearly: '\uD83D\uDD04 j\u00e4hrlich' };
-    const recurringBadge = t.recurring ? `<span class="recurring-badge">${recurringLabels[t.recurring] || '\uD83D\uDD04 ' + t.recurring}</span>` : '';
+    const recurringLabels = { daily: 't\u00e4glich', weekly: 'w\u00f6chentlich', monthly: 'monatlich', yearly: 'j\u00e4hrlich' };
+    const recurringBadge = t.recurring
+        ? `<span class="recurring-badge">${icon('repeat')}${escapeHtml(recurringLabels[t.recurring] || t.recurring)}</span>`
+        : '';
 
     // Tags
     const tagList = (t.tags || '') ? t.tags.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -374,27 +381,25 @@ function createTodoHTML(t) {
     ).join(' ');
 
     // Notify indicator
-    const notifyIcon = t.notify_at === 'due' ? ' \uD83D\uDD14' : '';
+    const notifyIcon = t.notify_at === 'due' ? icon('bell') : '';
 
     return `
         <div class="todo-item ${ampelClass}"
              draggable="true"
              data-id="${t.id}"
              data-order="${t.sort_order}">
-            <span class="drag-handle" title="Ziehen zum Sortieren">\u2261</span>
-            <button class="check-btn ${checkClass}" title="Abhaken">
-                ${t.completed ? '\u2713' : ''}
-            </button>
+            <span class="drag-handle" title="Ziehen zum Sortieren">${icon('grip')}</span>
+            <button class="check-btn ${checkClass}" title="Abhaken">${icon('check')}</button>
             <div class="todo-content">
                 <div class="todo-title ${titleClass}">${escapeHtml(t.title)}${notifyIcon}</div>
                 <div class="todo-meta-row">
-                    ${dateDisplay ? `<span class="todo-duedate${dateUrgent}">\uD83D\uDCC5 ${dateDisplay}</span>` : ''}
+                    ${dateDisplay ? `<span class="todo-duedate${dateUrgent}">${icon('cal')}${dateDisplay}</span>` : ''}
                     ${recurringBadge}
                 </div>
                 ${tagsHtml ? `<div class="todo-tags-row">${tagsHtml}</div>` : ''}
                 ${t.notes ? `<div class="todo-meta notes-text">${escapeHtml(t.notes)}</div>` : ''}
             </div>
-            <button class="delete-btn" title="L\u00f6schen">\u2715</button>
+            <button class="delete-btn" title="L\u00f6schen">${icon('x')}</button>
         </div>
     `;
 }
@@ -454,7 +459,7 @@ async function toggleTodo(id) {
 
         // If a new recurring instance was created, show a quick toast
         if (data.next) {
-            showToast('\uD83D\uDD04 N\u00e4chste Instanz: ' + data.next.due_date);
+            showToast('N\u00e4chste Instanz: ' + data.next.due_date);
         }
 
         loadTodos();
@@ -484,9 +489,9 @@ function showUndoNotification(id, el) {
     const bar = document.createElement('div');
     bar.className = 'undo-bar';
     bar.innerHTML = `
-        <span>🗑️ Gelöscht</span>
+        <span>${icon('trash')}Gelöscht</span>
         <button class="undo-btn">Rückgängig</button>
-        <button class="undo-dismiss">✕</button>
+        <button class="undo-dismiss" title="Schließen">${icon('x')}</button>
     `;
     bar.querySelector('.undo-btn').addEventListener('click', async () => {
         try {
