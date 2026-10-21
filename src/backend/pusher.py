@@ -8,11 +8,11 @@ Runs standalone (not inside FastAPI):
     python3 pusher.py
 
 Config via environment or .env file in this directory:
-    NTFY_URL         default http://100.103.1.124:2586
+    NTFY_URL         default http://localhost:2586
     NTFY_TOPIC       default abgehakt
     NTFY_USER        required for auth (admin user)
     NTFY_PASSWORD    required for auth
-    NTFY_CLICK_URL   default http://100.103.1.124:8766/ (opened on tap)
+    NTFY_CLICK_URL   default http://localhost:8766/ (opened on tap)
     APP_TIMEZONE     default Europe/Berlin (DB times are local wall-clock)
     POLL_INTERVAL    seconds between polls, default 30
     GRACE_MINUTES    max lateness to still send a push, default 180
@@ -49,11 +49,11 @@ def _load_dotenv(path):
 
 _load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
-NTFY_URL = os.environ.get("NTFY_URL", "http://100.103.1.124:2586").rstrip("/")
+NTFY_URL = os.environ.get("NTFY_URL", "http://localhost:2586").rstrip("/")
 NTFY_TOPIC = os.environ.get("NTFY_TOPIC", "abgehakt")
 NTFY_USER = os.environ.get("NTFY_USER", "")
 NTFY_PASSWORD = os.environ.get("NTFY_PASSWORD", "")
-NTFY_CLICK_URL = os.environ.get("NTFY_CLICK_URL", "http://100.103.1.124:8766/")
+NTFY_CLICK_URL = os.environ.get("NTFY_CLICK_URL", "http://localhost:8766/")
 APP_TIMEZONE = os.environ.get("APP_TIMEZONE", "Europe/Berlin")
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "30"))
 GRACE_MINUTES = int(os.environ.get("GRACE_MINUTES", "180"))
