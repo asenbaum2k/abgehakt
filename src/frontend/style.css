@@ -95,7 +95,7 @@ body {
     color: var(--text);
     min-height: 100vh;
     padding: var(--s-4);
-    padding-top: max(var(--s-4), env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top, 47px);
     padding-bottom: max(var(--s-4), env(safe-area-inset-bottom));
     padding-left: max(var(--s-4), env(safe-area-inset-left));
     padding-right: max(var(--s-4), env(safe-area-inset-right));
@@ -114,9 +114,6 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: var(--s-2) 0 var(--s-6);
-    /* iPhone-Notch/Camera-Bar: zusätzlichen sicheren Abstand erzwingen,
-       da iOS safe-area-inset-top in PWA/standalone-Ansicht sonst unterschätzt */
-    padding-top: max(var(--s-2), env(safe-area-inset-top));
 }
 h1 {
     font-size: 1.375rem;
