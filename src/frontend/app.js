@@ -317,6 +317,13 @@ function renderTodos(todos) {
         // Checkbox
         el.querySelector('.check-btn').addEventListener('click', () => toggleTodo(id));
 
+        // Edit
+        const editBtn = el.querySelector('.edit-btn');
+        if (editBtn) editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startEditTodo(el, id);
+        });
+
         // Delete
         el.querySelector('.delete-btn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -399,9 +406,87 @@ function createTodoHTML(t) {
                 ${tagsHtml ? `<div class="todo-tags-row">${tagsHtml}</div>` : ''}
                 ${t.notes ? `<div class="todo-meta notes-text">${escapeHtml(t.notes)}</div>` : ''}
             </div>
-            <button class="delete-btn" title="L\u00f6schen">${icon('x')}</button>
+            <button class="edit-btn" title="Ändern">${icon('edit')}</button>
+            <button class="delete-btn" title="Löschen">${icon('x')}</button>
         </div>
     `;
+}
+
+// ── Edit Todo ───────────────────────────────────────────────
+
+function startEditTodo(el, id) {
+    // Verhindere doppelten Edit
+    if (el.querySelector('.edit-form')) return;
+
+    const titleEl = el.querySelector('.todo-title');
+    const dueEl = el.querySelector('.todo-duedate');
+    const currentTitle = titleEl ? titleEl.textContent.replace(/🔔$/, '').trim() : '';
+    // Bestehendes Datum/Uhrzeit rekonstruieren (formatDate gibt z.B. "13.10.2026 19:00")
+    let dueDate = '', dueTime = '';
+    if (dueEl) {
+        const txt = dueEl.textContent.replace(/\s*🔔\s*$/, '').trim();
+        const m = txt.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\s*([0-2]?\d):([0-5]\d)?/);
+        if (m) {
+            dueDate = `${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+            dueTime = m[4] && m[5] ? `${m[4]}:${m[5]}` : '';
+        }
+    }
+
+    const content = el.querySelector('.todo-content');
+    content.innerHTML = `
+        <div class="edit-form">
+            <input type="text" class="edit-title" value="${escapeHtml(currentTitle)}" placeholder="Titel">
+            <div class="field-row edit-when">
+                <input type="date" class="edit-date" value="${dueDate}">
+                <input type="time" class="edit-time" value="${dueTime}">
+            </div>
+            <div class="edit-actions">
+                <button class="edit-save" title="Speichern">${icon('check')}</button>
+                <button class="edit-cancel" title="Abbrechen">${icon('x')}</button>
+            </div>
+        </div>
+    `;
+
+    // Fokus auf Titel; Clear-Button-Listener müssen deaktiviert werden
+    content.querySelector('.edit-title').focus();
+
+    const cancel = content.querySelector('.edit-cancel');
+    cancel.addEventListener('click', () => loadTodos());
+
+    const save = content.querySelector('.edit-save');
+    save.addEventListener('click', async () => {
+        const newTitle = content.querySelector('.edit-title').value.trim();
+        const newDate = content.querySelector('.edit-date').value;
+        const newTime = content.querySelector('.edit-time').value;
+        if (!newTitle) return;
+
+        const payload = { title: newTitle, due_date: newDate, due_time: newTime };
+        try {
+            const res = await fetch(`${API}/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error('Update failed');
+            // Backend setzt bei Datumsänderung notified_at zurück → Erinnerung feuert neu
+            showToast('Gespeichert');
+            loadTodos();
+        } catch (err) {
+            console.error('Edit failed:', err);
+            showToast('Speichern fehlgeschlagen');
+        }
+    });
+
+    // Enter = speichern, Esc = abbrechen
+    content.querySelector('.edit-title').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); save.click(); }
+    });
+    content.querySelector('.edit-time').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); save.click(); }
+    });
+    content.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); loadTodos(); }
+    });
 }
 
 // ── Swipe to Delete ─────────────────────────────────────────

@@ -467,6 +467,73 @@ h1 {
     .delete-btn { opacity: 0.55; }
 }
 
+/* Edit — wie Delete, aber mit eigener Hover-Farbe */
+.edit-btn {
+    background: none;
+    border: none;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 5px;
+    flex-shrink: 0;
+    opacity: 0;
+    display: grid; place-items: center;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+.todo-item:hover .edit-btn { opacity: 0.9; }
+.edit-btn:hover { color: var(--accent); background: var(--surface-sunken); }
+.edit-btn svg { width: 14px; height: 14px; }
+@media (hover: none) {
+    .edit-btn { opacity: 0.55; }
+}
+
+/* Edit-Form (Inline) */
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+}
+.edit-form .edit-title {
+    width: 100%;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 0.95rem;
+}
+.edit-form .edit-when {
+    display: flex;
+    gap: var(--s-2);
+}
+.edit-form .edit-when input {
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    color: var(--text);
+    padding: 7px 9px;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+}
+.edit-form .edit-actions {
+    display: flex;
+    gap: var(--s-2);
+    justify-content: flex-end;
+}
+.edit-save, .edit-cancel {
+    background: none;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px 12px;
+    display: grid; place-items: center;
+}
+.edit-save:hover { color: var(--checked); border-color: var(--checked); }
+.edit-cancel:hover { color: var(--danger); border-color: var(--danger); }
+.edit-save svg, .edit-cancel svg { width: 15px; height: 15px; }
+
 /* ══ Undo-Bar ══ */
 .undo-bar {
     display: flex; align-items: center; gap: var(--s-3);
