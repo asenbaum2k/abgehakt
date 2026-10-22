@@ -2,7 +2,7 @@
  * abgehakt v2 — Service Worker
  * Enables PWA offline support and notification scheduling.
  */
-const CACHE_NAME = 'abgehakt-v2-2';
+const CACHE_NAME = 'abgehakt-v2-3';
 const ASSETS = [
     '/',
     '/index.html',
@@ -46,22 +46,19 @@ self.addEventListener('fetch', (event) => {
     if (event.request.url.includes('/api/')) return;
 
     event.respondWith(
-        caches.match(event.request).then((cached) => {
-            // Return cached, then update in background
-            const fetchPromise = fetch(event.request)
-                .then((response) => {
-                    if (response.ok) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(event.request, clone);
-                        });
-                    }
-                    return response;
-                })
-                .catch(() => cached);
-
-            return cached || fetchPromise;
-        })
+        // Network-first for page & assets: immer frische Version,
+        // Cache nur als Offline-Fallback (verhindert veraltete CSS/JS beim Update)
+        fetch(event.request)
+            .then((response) => {
+                if (response.ok) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, clone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => caches.match(event.request))
     );
 });
 
